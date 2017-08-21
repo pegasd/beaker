@@ -20,7 +20,6 @@ module Beaker
     # a Beaker::CLI object executes, it can pick up these options. Notably excluded from this
     # group are `help` and `version`. Please note that whenever the command_line_parser.rb is
     # updated, this list should also be updated as well.
-    class_option :hosts, :aliases => '-h', :type => :string, :group => 'Beaker run'
     class_option :'options-file', :aliases => '-o', :type => :string, :group => 'Beaker run'
     class_option :helper, :type => :string, :group => 'Beaker run'
     class_option :'load-path', :type => :string, :group => 'Beaker run'
@@ -52,6 +51,13 @@ module Beaker
     class_option :tag, :type => :string, :group => 'Beaker run'
     class_option :'exclude-tags', :type => :string, :group => 'Beaker run'
     class_option :'xml-time-order', :type => :boolean, :group => 'Beaker run'
+    class_option :'debug-errors', :type => :boolean, :group => 'Beaker run'
+
+    # The following are listed as deprecated in beaker --help, but needed now for
+    # feature parity for beaker 3.x.
+    class_option :xml, :type => :boolean, :group => "Beaker run"
+    class_option :type, :type => :string, :group => "Beaker run"
+    class_option :debug, :type => :boolean, :group => "Beaker run"
 
     desc "init BEAKER_RUN_OPTIONS", "Initializes the required configuration for Beaker subcommand execution"
     long_desc <<-LONGDESC
@@ -62,6 +68,7 @@ module Beaker
       as necessary.
     LONGDESC
     option :help, :type => :boolean, :hide => true
+    method_option :hosts, :aliases => '-h', :type => :string, :required => true
     def init()
       if options[:help]
         invoke :help, [], ["init"]

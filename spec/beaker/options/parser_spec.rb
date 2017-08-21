@@ -140,23 +140,31 @@ module Beaker
           let(:env) { @env || {:level => 'highest'} }
           let(:argv) { @argv || {:level => 'second'} }
           let(:host_file) { @host_file || {:level => 'third'} }
-          let(:opt_file) { @opt_file || {:level => 'fourth', 
-                            :ssh => {
-                              :auth_methods => 'auth123',
-                              :user_known_hosts_file => 'hosts123'
-                            }                                
-          } }
+          let(:opt_file) { @opt_file || {
+              :level => 'fourth',
+              :ssh => {
+                  :auth_methods => 'auth123',
+                  :user_known_hosts_file => 'hosts123'
+              }
+          }}
           let(:subcommand_file) {@subcommand_file || {:level => 'fifth'}}
-          let(:presets) { {:level => 'lowest',
-                            :ssh => {
-                              :config => 'config123',
-                              :paranoid => 'paranoid123',
-                              :port => 'port123',
-                              :forward_agent => 'forwardagent123',
-                              :keys => 'keys123',
-                              :keepalive => 'keepalive123'
-                            } 
-          } }
+          let(:homedir_file) {@homedir_file || {
+              :level => 'sixth',
+              :ssh => {
+                  :auth_methods => 'auth_home_123'
+              }
+          }}
+          let(:presets) { {
+              :level => 'lowest',
+              :ssh => {
+                  :config => 'config123',
+                  :paranoid => 'paranoid123',
+                  :port => 'port123',
+                  :forward_agent => 'forwardagent123',
+                  :keys => 'keys123',
+                  :keepalive => 'keepalive123'
+              }
+          }}
 
           before :each do
             expect(parser).to receive(:normalize_args).and_return(true)
@@ -175,17 +183,29 @@ module Beaker
             allow(OptionsFileParser).to receive(:parse_options_file).and_return(opt_file)
             allow(parser).to receive(:parse_hosts_options).and_return(host_file)
 
-            allow(SubcommandOptionsParser).to receive(:parse_subcommand_options).and_return(subcommand_file)
+            allow(SubcommandOptionsParser).to receive(:parse_subcommand_options).and_return(homedir_file, subcommand_file)
           end
 
           it 'presets have the lowest priority' do
-            @env = @argv = @host_file = @opt_file = @subcommand_file = {}
+            @env = @argv = @host_file = @opt_file = @subcommand_file = @homedir_file = {}
             mock_out_parsing
 
             opts = parser.parse_args([])
             attribution = parser.attribution
             expect(opts[:level]).to be == 'lowest'
             expect(attribution[:level]).to be == 'preset'
+          end
+
+          it 'home directory options should have sixth priority' do
+            @env = @argv = @host_file = @opt_file = @subcommand_file = {}
+            mock_out_parsing
+
+            opts = parser.parse_args([])
+            attribution = parser.attribution
+            expect(opts[:ssh][:auth_methods]).to be == 'auth_home_123'
+            expect(attribution[:ssh][:auth_methods]).to be == 'homedir'
+            expect(opts[:level]).to be == 'sixth'
+            expect(attribution[:level]).to be == 'homedir'
           end
 
           it 'subcommand_options should have fifth priority' do

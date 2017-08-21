@@ -4,53 +4,8 @@ module Beaker
   describe Hypervisor do
     let( :hypervisor ) { Beaker::Hypervisor }
 
-    it "creates a vsphere hypervisor for vsphere hosts" do
-      vsphere = double( 'vsphere' )
-      allow( vsphere ).to receive( :provision ).and_return( true )
-      expect( Vsphere ).to receive( :new ).once.and_return( vsphere )
-      expect( hypervisor.create( 'vsphere', [], make_opts() ) ).to be === vsphere
-    end
-
-    it "creates a fusion hypervisor for fusion hosts" do
-      fusion = double( 'fusion' )
-      allow( fusion ).to receive( :provision ).and_return( true )
-      expect( Fusion ).to receive( :new ).once.and_return( fusion )
-      expect( hypervisor.create( 'fusion', [], make_opts() ) ).to be === fusion
-    end
-
-    it "creates a vmpooler hypervisor for hosts that are pooled" do
-      vcloud = double( 'vcloud' )
-      allow( vcloud ).to receive( :provision ).and_return( true )
-      expect( Vmpooler ).to receive( :new ).once.and_return( vcloud )
-      expect( hypervisor.create( 'vcloud', [], make_opts().merge( { 'pooling_api' => true } ) ) ).to be === vcloud
-    end
-
-    it "creates a vcloud hypervisor for vcloud hosts that are not pooled" do
-      vcloud = double( 'vcloud' )
-      allow( vcloud ).to receive( :provision ).and_return( true )
-      expect( Vcloud ).to receive( :new ).once.and_return( vcloud )
-      expect( hypervisor.create( 'vcloud', [], make_opts().merge( { 'pooling_api' => false } ) ) ).to be === vcloud
-    end
-
-    it "creates a vagrant hypervisor for vagrant hosts" do
-      vagrant = double( 'vagrant' )
-      allow( vagrant ).to receive( :provision ).and_return( true )
-      expect( Vagrant ).to receive( :new ).once.and_return( vagrant )
-      expect( hypervisor.create( 'vagrant', [], make_opts() ) ).to be === vagrant
-    end
-
-    it "creates a vagrant_fusion hypervisor for vagrant vmware fusion hosts" do
-      vagrant = double( 'vagrant_fusion' )
-      allow( vagrant ).to receive( :provision ).and_return( true )
-      expect( VagrantFusion ).to receive( :new ).once.and_return( vagrant )
-      expect( hypervisor.create( 'vagrant_fusion', [], make_opts() ) ).to be === vagrant
-    end
-
-    it "creates a vagrant_virtualbox hypervisor for vagrant virtualbox hosts" do
-      vagrant = double( 'vagrant_virtualbox' )
-      allow( vagrant ).to receive( :provision ).and_return( true )
-      expect( VagrantVirtualbox ).to receive( :new ).once.and_return( vagrant )
-      expect( hypervisor.create( 'vagrant_virtualbox', [], make_opts() ) ).to be === vagrant
+    it "includes custom hypervisor" do
+      expect{ hypervisor.create('custom_hypervisor', [], make_opts() )}.to raise_error(RuntimeError, "Invalid hypervisor: custom_hypervisor")
     end
 
     context "#configure" do

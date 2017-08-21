@@ -409,6 +409,7 @@ describe Beaker do
 
       hosts.each do |host|
         windows_pkgs.each do |pkg|
+          allow( host ).to receive( :cygwin_installed? ).and_return( true )
           allow( host ).to receive( :is_cygwin? ).and_return( true )
           expect( host ).to receive( :check_for_package ).with( pkg ).once.and_return( false )
           expect( host ).to receive( :install_package ).with( pkg ).once
@@ -516,10 +517,18 @@ describe Beaker do
     it "can exec the get_ip command" do
       host = make_host('name', { :stdout => "192.168.2.130\n" } )
 
-      expect( Beaker::Command ).to receive( :new ).with( "ip a|awk '/global/{print$2}' | cut -d/ -f1 | head -1", [], {:prepend_cmds=>nil, :cmdexe=>false} ).once
+      expect( Beaker::Command ).to receive( :new ).with( "ip a | awk '/global/{print$2}' | cut -d/ -f1 | head -1", [], {:prepend_cmds=>nil, :cmdexe=>false} ).once
 
       expect( subject.get_ip( host ) ).to be === "192.168.2.130"
 
+    end
+
+    it "can exec the get_ip command with tail with vagrant hypervisor" do
+      host = make_host('name', { :stdout => "192.168.2.131\n", :hypervisor => "vagrant" } )
+
+      expect( Beaker::Command ).to receive( :new ).with( "ip a | awk '/global/{print$2}' | cut -d/ -f1 | tail -1", [], {:prepend_cmds=>nil, :cmdexe=>false} ).once
+
+      expect( subject.get_ip( host ) ).to be === "192.168.2.131"
     end
 
   end

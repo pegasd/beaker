@@ -47,6 +47,9 @@ module Beaker
         subcommand.init
         expect(mock_options).not_to have_key(:timestamp)
       end
+      it 'requires hosts flag' do
+        expect{subcommand.init}.to raise_error(NotImplementedError)
+      end
     end
 
     context '#provision' do
@@ -83,6 +86,10 @@ module Beaker
 
         expect(yaml_store_mock).to receive(:[]=).with('provisioned', true)
         subcommand.provision
+      end
+      it 'does not allow hosts to be passed' do
+        subcommand.options = {:hosts => "myhost"}
+        expect{subcommand.provision()}.to raise_error(NotImplementedError)
       end
     end
 

@@ -24,7 +24,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rspec-its'
   s.add_development_dependency 'fakefs', '~> 0.6'
   s.add_development_dependency 'simplecov'
-  s.add_development_dependency 'pry', '~> 0.10'
   s.add_development_dependency 'rake', '~> 10.0'
 
   # Documentation dependencies
@@ -32,7 +31,10 @@ Gem::Specification.new do |s|
 
   # Run time dependencies
   s.add_runtime_dependency 'minitest', '~> 5.4'
-  s.add_runtime_dependency 'minitar', '~> 0.5.4'
+  s.add_runtime_dependency 'minitar', '~> 0.6'
+  s.add_runtime_dependency 'pry-byebug', '~> 3.4.2'
+  # pry-byebug can have issues with native readline libs so add rb-readline
+  s.add_runtime_dependency 'rb-readline', '~> 0.5.3'
 
   s.add_runtime_dependency 'hocon', '~> 1.0'
   s.add_runtime_dependency 'net-ssh', '~> 4.0'
@@ -48,15 +50,16 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'stringify-hash', '~> 0.0'
   s.add_runtime_dependency 'beaker-hiera', '~> 0.0'
   s.add_runtime_dependency 'beaker-hostgenerator'
+  s.add_runtime_dependency 'beaker-puppet', '~> 0.0'
 
   # Optional provisioner specific support
-  s.add_runtime_dependency 'rbvmomi', '~> 1.9'
-  s.add_runtime_dependency 'fission', '~> 0.4'
-  s.add_runtime_dependency 'google-api-client', '~> 0.9'
-  s.add_runtime_dependency 'aws-sdk-v1', '~> 1.57'
-  s.add_runtime_dependency 'docker-api'
-  s.add_runtime_dependency 'fog', '~> 1.38'
+  s.add_runtime_dependency 'beaker-docker', '~> 0.1'
+  s.add_runtime_dependency 'beaker-aws', '~> 0.1'
+  s.add_runtime_dependency 'beaker-vmpooler', '~> 1.0'
+  s.add_runtime_dependency 'beaker-google', '~> 0.1'
+  s.add_runtime_dependency 'beaker-vagrant', '~> 0.1'
+  s.add_runtime_dependency 'beaker-vmware', '~> 0.1'
+  s.add_runtime_dependency 'beaker-openstack', '~> 0.1'
+  s.add_runtime_dependency 'beaker-vcloud', '~> 0.1'
 
-  # So fog doesn't always complain of unmet AWS dependencies
-  s.add_runtime_dependency 'unf', '~> 0.1'
 end

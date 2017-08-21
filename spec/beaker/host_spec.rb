@@ -122,62 +122,31 @@ module Beaker
         let(:cygwin64) { 'setup-x86_64.exe' }
         let(:package) { 'foo' }
 
-        before(:each) do
-          @platform = 'windows'
-          allow( host ).to receive(:check_for_package).and_return(true)
-        end
-
         context "testing osarchitecture" do
 
-          before(:each) do
-            expect( host ).to receive(:execute).with(/wmic os get osarchitecture/, anything).and_yield(success_osarch_check)
-          end
-
-          context "32 bit" do
-            let(:success_osarch_check) { double(:success, :exit_code => 0, :stdout => '32-bit') }
-
-            it "uses 32 bit cygwin" do
-              expect( host ).to receive(:execute).with(/#{cygwin}.*#{package}/)
-              host.install_package(package)
-            end
-          end
-
           context "64 bit" do
-            let(:success_osarch_check) { double(:success, :exit_code => 0, :stdout => '64-bit') }
+            before do
+              @platform = Beaker::Platform.new('windows-2008r2-64')
+            end
 
             it "uses 64 bit cygwin" do
               expect( host ).to receive(:execute).with(/#{cygwin64}.*#{package}/)
               host.install_package(package)
             end
           end
-        end
-
-        context "testing os name" do
-          let(:failed_osarch_check) { double(:failed, :exit_code => 1) }
-
-          before(:each) do
-            expect( host ).to receive(:execute).with(/wmic os get osarchitecture/, anything).and_yield(failed_osarch_check)
-            expect( host ).to receive(:execute).with(/wmic os get name/, anything).and_yield(name_check)
-          end
 
           context "32 bit" do
-            let(:name_check) { double(:failure, :exit_code => 1) }
+            before do
+              @platform = Beaker::Platform.new('windows-10ent-32')
+            end
 
             it "uses 32 bit cygwin" do
               expect( host ).to receive(:execute).with(/#{cygwin}.*#{package}/)
               host.install_package(package)
             end
           end
-
-          context "64 bit" do
-            let(:name_check) { double(:success, :exit_code => 0) }
-
-            it "uses 64 bit cygwin" do
-              expect( host ).to receive(:execute).with(/#{cygwin64}.*#{package}/)
-              host.install_package(package)
-            end
-          end
         end
+
       end
     end
 
@@ -714,12 +683,17 @@ module Beaker
         host.get_public_ip
       end
 
+      it 'call upon openstack host to get the ip address' do
+        host.host_hash[:hypervisor] = 'openstack'
+        expect(host.get_public_ip).to be(host.host_hash[:ip])
+      end
+
       it 'returns nil when no matching hypervisor is found' do
         host.host_hash[:hypervisor] = 'vmpooler'
         expect(host.get_public_ip).to be(nil)
       end
 
-      it 'calls execute with curl if the host_hash[:instance] is not defined and the host is not an instance of Windows::Host' do
+      it 'calls execute with curl if the host_hash[:instance] is not defined for ec2 and the host is not an instance of Windows::Host' do
         host.host_hash[:hypervisor] = 'ec2'
         host.host_hash[:instance] = nil
         expect(host).to receive(:instance_of?).with(Windows::Host).and_return(false)
@@ -727,13 +701,30 @@ module Beaker
         host.get_public_ip
       end
 
-      it 'calls execute with wget if the host_hash[:instance] is not defined and the host is an instance of Windows::Host' do
+      it 'calls execute with wget if the host_hash[:instance] is not defined for ec2 and the host is an instance of Windows::Host' do
         host.host_hash[:hypervisor] = 'ec2'
         host.host_hash[:instance] = nil
         expect(host).to receive(:instance_of?).with(Windows::Host).and_return(true)
         expect(host).to receive(:execute).with("wget http://169.254.169.254/latest/meta-data/public-ipv4").and_return('127.0.0.1')
         host.get_public_ip
       end
+
+      it 'calls execute with curl if the host_hash[:ip] is not defined for openstack and the host is not an instance of Windows::Host' do
+        host.host_hash[:hypervisor] = 'openstack'
+        host.host_hash[:ip] = nil
+        expect(host).to receive(:instance_of?).with(Windows::Host).and_return(false)
+        expect(host).to receive(:execute).with("curl http://169.254.169.254/latest/meta-data/public-ipv4").and_return('127.0.0.1')
+        host.get_public_ip
+      end
+
+      it 'calls execute with wget if the host_hash[:ip] is not defined for openstack and the host is an instance of Windows::Host' do
+        host.host_hash[:hypervisor] = 'openstack'
+        host.host_hash[:ip] = nil
+        expect(host).to receive(:instance_of?).with(Windows::Host).and_return(true)
+        expect(host).to receive(:execute).with("wget http://169.254.169.254/latest/meta-data/public-ipv4").and_return('127.0.0.1')
+        host.get_public_ip
+      end
+
     end
 
     describe '#ip' do

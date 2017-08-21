@@ -22,44 +22,6 @@ module Beaker
       @logger.notify("Beaker::Hypervisor, found some #{type} boxes to create")
 
       hyper_class = case type
-        when /^aix$/
-          Beaker::Aixer
-        when /^solaris$/
-          Beaker::Solaris
-        when /^vsphere$/
-          Beaker::Vsphere
-        when /^fusion$/
-          Beaker::Fusion
-        when /^ec2$/
-          Beaker::AwsSdk
-        when /^vmpooler$/
-          Beaker::Vmpooler
-        when /^vcloud$/
-          if options['pooling_api']
-            Beaker::Vmpooler
-          else
-            Beaker::Vcloud
-          end
-        when /^vagrant$/
-          Beaker::Vagrant
-        when /^vagrant_custom$/
-          Beaker::VagrantCustom
-        when /^vagrant_libvirt$/
-          Beaker::VagrantLibvirt
-        when /^vagrant_virtualbox$/
-          Beaker::VagrantVirtualbox
-        when /^vagrant_fusion$/
-          Beaker::VagrantFusion
-        when /^vagrant_workstation$/
-          Beaker::VagrantWorkstation
-        when /^vagrant_parallels$/
-          Beaker::VagrantParallels
-        when /^google$/
-          Beaker::GoogleCompute
-        when /^docker$/
-          Beaker::Docker
-        when /^openstack$/
-          Beaker::OpenStack
         when /^noop$/
           Beaker::Noop
         when /^(default)|(none)$/
@@ -71,7 +33,7 @@ module Beaker
           rescue LoadError
             raise "Invalid hypervisor: #{type}"
           end
-          Beaker.const_get(type.capitalize)
+          Beaker.const_get(type.split('_').collect(&:capitalize).join)
         end
 
       hypervisor = hyper_class.new(hosts_to_provision, options)
@@ -150,6 +112,4 @@ module Beaker
   end
 end
 
-[ 'vsphere_helper', 'vagrant', 'vagrant_custom', 'vagrant_virtualbox', 'vagrant_parallels', 'vagrant_libvirt', 'vagrant_fusion', 'vagrant_workstation', 'fusion', 'aws_sdk', 'vsphere', 'vmpooler', 'vcloud', 'docker', 'google_compute', 'openstack', 'noop' ].each do |lib|
-    require "beaker/hypervisor/#{lib}"
-end
+require "beaker/hypervisor/noop"

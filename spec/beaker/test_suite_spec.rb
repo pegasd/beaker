@@ -117,18 +117,16 @@ module Beaker
         expect( tsr.passed_tests).to be === 1
 
       end
-
-
     end
 
-    describe TestSuite::TestSuiteResult do
+    describe TestSuiteResult do
 
       let( :options )           { make_opts.merge({ :logger => double().as_null_object }) }
       let( :hosts )             { make_hosts() }
       let( :testcase1 )         { Beaker::TestCase.new( hosts, options[:logger], options) }
       let( :testcase2 )         { Beaker::TestCase.new( hosts, options[:logger], options) }
       let( :testcase3 )         { Beaker::TestCase.new( hosts, options[:logger], options) }
-      let( :test_suite_result ) { TestSuite::TestSuiteResult.new( options, "my_suite") }
+      let( :test_suite_result ) { TestSuiteResult.new( options, "my_suite") }
 
       it 'supports adding test cases' do
         expect( test_suite_result.test_count ).to be === 0
@@ -233,7 +231,7 @@ module Beaker
           allow(ex).to receive(:backtrace).and_return(['path_to_test_file.rb line 1 - blah'])
           tc.instance_variable_set(:@exception, ex)
           test_suite_result.add_test_case( tc )
-          expect(options[:logger]).to_not receive(:notify).with(/Test line:/)
+          expect(test_suite_result.print_test_result(tc)).not_to match(/Test line:/)
           expect{ test_suite_result.print_test_result(tc) }.to_not raise_error
         end
 
@@ -243,8 +241,7 @@ module Beaker
           allow(ex).to receive(:backtrace).and_return(['path_to_test_file.rb line 1 - blah'])
           tc.instance_variable_set(:@exception, ex)
           test_suite_result.add_test_case( tc )
-
-          expect(options[:logger]).to receive(:notify).with(/Test line:/)
+          expect(test_suite_result.print_test_result(tc)).to match(/Test line:/)
           expect{ test_suite_result.print_test_result(tc) }.to_not raise_error
         end
       end
@@ -255,11 +252,8 @@ module Beaker
                                          :log_dated_dir => '.',
                                          :xml_dated_dir => '.'}) }
         let(:rb_test) { 'my_ruby_file.rb' }
+
         before(:each) do
-          @nokogiri_mock = Hash.new
-          allow( @nokogiri_mock ).to receive( :add_child )
-          allow( Nokogiri::XML::Node ).to receive( :new ) { @nokogiri_mock }
-          allow( LoggerJunit ).to receive( :write_xml ).and_yield( Object.new, @nokogiri_mock )
           @files = [ rb_test, rb_test, rb_test]
           @ts    = Beaker::TestSuite.new( 'name', hosts, options, Time.now, :fast )
           @tsr   = @ts.instance_variable_get( :@test_suite_results )
@@ -271,6 +265,9 @@ module Beaker
             allow( tc ).to receive( :sublog ).and_return( false )
             @test_cases << tc
           end
+          @rexml_mock = REXML::Element.new("testsuites")
+          allow(REXML::Element).to receive( :add_element ).and_call_original
+          allow( LoggerJunit ).to receive( :write_xml ).and_yield( Object.new, @rexml_mock )
         end
 
         it 'doesn\'t re-order test cases themselves on time_sort' do
@@ -293,12 +290,14 @@ module Beaker
           inner_value = {'second' => '2nd'}
           @test_cases.each do |tc|
             tc.instance_variable_set(:@runtime, 0)
-            tc.instance_variable_set(:@exports, [{'oh' => 'hai', 'first' => inner_value}])
+            tc.instance_variable_set(:@exports, [{'oh hey' => 'hai', 'first' => inner_value}])
             @tsr.add_test_case( tc )
           end
-          @tsr.write_junit_xml( 'fakeFilePath08' )
-          expect( @nokogiri_mock['oh'] ).to    eq('hai')
-          expect( @nokogiri_mock['first'] ).to eq(inner_value)
+          @tsr.write_junit_xml( 'fakeFilePath08')
+          @rexml_mock.elements.each("//testcase") do |e|
+            expect(e.attributes["oh_hey"].to_s).to eq('hai')
+            expect(e.attributes["first"]).to eq(inner_value.to_s)
+          end
         end
 
         it 'writes @export array of hashes properly' do
@@ -309,14 +308,12 @@ module Beaker
             @tsr.add_test_case( tc )
           end
           @tsr.write_junit_xml( 'fakeFilePath08' )
-          expect( @nokogiri_mock[:yes] ).to eq('hello')
-          expect( @nokogiri_mock[:uh] ).to  eq('sher')
+          @rexml_mock.elements.each("//testcase") do |e|
+            expect(e.attributes["yes"].to_s).to eq('hello')
+            expect(e.attributes["uh"].to_s).to eq('sher')
+          end
         end
 
-        # this isn't the best test as the @nokogiri_mock is a single hash.
-        #   it really should be an array of hashes or nested, to ensure each case
-        #   gets the correct key/value.  But i could not get it to work properly with
-        #   the various calls to ::Node and #add_child
         it 'writes @export hashes per test case properly' do
           expect( @tsr.instance_variable_get( :@logger ) ).to receive( :error ).never
           @test_cases.each_with_index do |tc,index|
@@ -325,13 +322,13 @@ module Beaker
             @tsr.add_test_case( tc )
           end
           @tsr.write_junit_xml( 'fakeFilePath08' )
-          @test_cases.each_with_index do |tc,index|
-            expect( @nokogiri_mock["yes_#{index}"] ).to eq("hello#{index}")
+          index = 0
+          @rexml_mock.elements.each("//testcase") do |e|
+            expect(e.attributes["yes_#{index}"]).to eq("hello#{index}")
+            index += 1
           end
         end
-
       end
-
 
     end
 
@@ -360,7 +357,6 @@ module Beaker
           testsuite.log_path('foo.txt', 'a/b/c/d/e/f')
           expect( File.symlink?('a/latest') ).to be_truthy
         end
-
       end
 
       describe 'builds the symlink directory correctly' do
@@ -377,7 +373,6 @@ module Beaker
           testsuite.log_path('foo.txt', 'f/g/h/i/j/k')
           expect( File.readlink('f/latest') ).to be === 'g/h/i/j/k'
         end
-
       end
 
     end
